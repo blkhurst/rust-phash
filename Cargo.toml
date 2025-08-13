@@ -9,3 +9,7 @@ clap = { version = "4.5.45", features = ["derive"] }
 
 # Walk Filesystem
 walkdir = "2"
+
+# JSON
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
