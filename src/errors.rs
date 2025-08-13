@@ -5,6 +5,9 @@ pub enum AppError {
     #[error("Cache error: {0}")]
     Cache(#[from] CacheError),
 
+    #[error(transparent)]
+    Hash(#[from] HashError),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
@@ -19,4 +22,13 @@ pub enum CacheError {
 
     #[error("Unexpected cache version: expected {expected}, got {found}")]
     VersionMismatch { expected: u32, found: u32 },
+}
+
+#[derive(Debug, Error)]
+pub enum HashError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Image(#[from] image::ImageError),
 }

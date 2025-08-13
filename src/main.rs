@@ -2,11 +2,13 @@
 mod args;
 mod cache;
 mod errors;
+mod hashing;
 mod progress;
 mod scan;
 mod types;
 
 use crate::args::Args;
+use crate::hashing::compute_blake3;
 use crate::scan::scan_files;
 use clap::Parser;
 
@@ -45,22 +47,24 @@ fn main() -> Result<(), errors::AppError> {
     let mp = progress::multi();
     let hashing_pb = mp.add(progress::bar(media_paths.len() as u64, "Hashing"));
 
+    // Hasher
+    let hasher = hashing::build_hasher(hash_alg, hash_w, hash_h);
+
     // Iterate - Perceptual Hashing
     for p in &media_paths {
-        // Compute file hash
-        let key = p
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("unknown")
-            .to_string();
+        // Increment ProgressBar
+        hashing_pb.inc(1);
 
-        // Cache Hit
+        // Compute file hash
+        let key = compute_blake3(p)?;
+
+        // Cache Hit?
         if cache::lookup(&cache, &key).is_some() {
             continue;
         }
 
         // Compute perceptual hash
-        let perceptual_hash = String::new();
+        let perceptual_hash = hashing::perceptual_hash(p, &hasher)?;
 
         // Update CacheFile
         cache::upsert(
@@ -73,13 +77,10 @@ fn main() -> Result<(), errors::AppError> {
                 perceptual_hash: perceptual_hash,
             },
         );
-
-        // Increment ProgressBar
-        hashing_pb.inc(1);
     }
 
     // Clear Progress
-    hashing_pb.finish_with_message("Hashed");
+    hashing_pb.finish_and_clear();
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;

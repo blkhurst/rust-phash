@@ -19,3 +19,17 @@ thiserror = "2.0.14"
 
 # Progress Bar
 indicatif = "0.18.0"
+
+# # Blake3 Filesystem Hashing
+blake3 = "1.8.2"
+
+# Perceptual Hashing, Ensure image *same* version used by img_hash
+img_hash = "3.2.0"
+image = { version = "0.23.14", default-features = false, features = [
+    "png",
+    "jpeg",
+    "bmp",
+    "gif",
+    "tiff",
+    "webp",
+] }
