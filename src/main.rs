@@ -1,5 +1,6 @@
 // Declare .rs files as the module crate::files
 mod args;
+mod cache;
 mod errors;
 mod scan;
 mod types;
@@ -34,6 +35,35 @@ fn main() -> Result<(), errors::AppError> {
         println!("Nothing to do.");
         return Ok(());
     }
+
+    // Cache
+    let cache_path = std::env::current_exe()?.with_file_name(&cache_file);
+    let mut cache = cache::load_cache(&cache_path)?;
+
+    // Iterate
+    for p in &media_paths {
+        let key = p
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        let perceptual_hash = String::new();
+
+        let entry = types::CacheEntry {
+            hash_alg: hash_alg,
+            hash_w: hash_w,
+            hash_h: hash_h,
+            perceptual_hash: perceptual_hash,
+        };
+
+        cache::upsert(&mut cache, key, entry);
+
+        println!("Debug: {:#?}", p.file_name())
+    }
+
+    // Save Cache
+    cache::save_cache(&cache_path, &cache)?;
 
     Ok(())
 }
