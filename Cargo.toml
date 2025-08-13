@@ -16,3 +16,6 @@ serde_json = "1.0"
 
 # Error Handling
 thiserror = "2.0.14"
+
+# Progress Bar
+indicatif = "0.18.0"

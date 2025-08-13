@@ -2,6 +2,7 @@
 mod args;
 mod cache;
 mod errors;
+mod progress;
 mod scan;
 mod types;
 
@@ -40,27 +41,45 @@ fn main() -> Result<(), errors::AppError> {
     let cache_path = std::env::current_exe()?.with_file_name(&cache_file);
     let mut cache = cache::load_cache(&cache_path)?;
 
-    // Iterate
+    // Progress Start
+    let mp = progress::multi();
+    let hashing_pb = mp.add(progress::bar(media_paths.len() as u64, "Hashing"));
+
+    // Iterate - Perceptual Hashing
     for p in &media_paths {
+        // Compute file hash
         let key = p
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
 
+        // Cache Hit
+        if cache::lookup(&cache, &key).is_some() {
+            continue;
+        }
+
+        // Compute perceptual hash
         let perceptual_hash = String::new();
 
-        let entry = types::CacheEntry {
-            hash_alg: hash_alg,
-            hash_w: hash_w,
-            hash_h: hash_h,
-            perceptual_hash: perceptual_hash,
-        };
+        // Update CacheFile
+        cache::upsert(
+            &mut cache,
+            key,
+            types::CacheEntry {
+                hash_alg: hash_alg,
+                hash_w: hash_w,
+                hash_h: hash_h,
+                perceptual_hash: perceptual_hash,
+            },
+        );
 
-        cache::upsert(&mut cache, key, entry);
-
-        println!("Debug: {:#?}", p.file_name())
+        // Increment ProgressBar
+        hashing_pb.inc(1);
     }
+
+    // Clear Progress
+    hashing_pb.finish_with_message("Hashed");
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;
