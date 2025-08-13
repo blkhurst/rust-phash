@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 # CLI
 clap = { version = "4.5.45", features = ["derive"] }
+
+# Walk Filesystem
+walkdir = "2"
