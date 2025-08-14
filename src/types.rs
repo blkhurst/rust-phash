@@ -14,13 +14,13 @@ pub const DEFAULT_HASH_W: u32 = 16;
 pub const DEFAULT_HASH_H: u32 = 16;
 
 /// Hamming distance threshold.
-pub const DEFAULT_THRESHOLD: u32 = 20;
+pub const DEFAULT_THRESHOLD: u32 = 10;
 
 /// Default parallelism. If 0, Rayon decides.
 pub const DEFAULT_PARALLELISM: usize = 0;
 
 /// Cache filename
-pub const DEFAULT_CACHE_FILE_NAME: &str = ".vhash-cache.json";
+pub const DEFAULT_CACHE_FILE_NAME: &str = ".phash-cache.json";
 
 /// Hashing algorithm choices, mirrored from `img_hash`.
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq, Serialize, Deserialize)]
@@ -60,4 +60,12 @@ pub struct AppConfig {
     pub hash_h: u32,
     pub threshold: u32,
     pub parallelism: usize,
+}
+
+/// Pipeline Result for displaying information to user.
+#[derive(Debug, Clone)]
+pub struct PipelineResult {
+    pub path: PathBuf,
+    pub blake3: String,
+    pub perceptual_hash: String,
 }

@@ -1,5 +1,5 @@
 use crate::{errors::HashError, types as T};
-use img_hash::{HashAlg as ImgAlg, Hasher, HasherConfig, ImageHash};
+use img_hash::{HashAlg as ImgAlg, Hasher, HasherConfig};
 use std::{fs, io::Read, path::Path};
 
 /// Stream the file and return its BLAKE3 digest.
@@ -38,7 +38,7 @@ pub fn build_hasher(alg: T::HashAlg, w: u32, h: u32) -> Hasher {
 }
 
 /// Perceptual Hash Image
-pub fn perceptual_hash(path: &Path, hasher: &Hasher) -> Result<String, HashError> {
+pub fn compute_perceptual_hash(path: &Path, hasher: &Hasher) -> Result<String, HashError> {
     let img = img_hash::image::open(path)?; // ImageError -> HashError
     Ok(hasher.hash_image(&img).to_base64())
 }

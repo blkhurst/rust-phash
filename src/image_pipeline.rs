@@ -6,28 +6,19 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-///
-#[derive(Debug, Clone)]
-pub struct ImagePipelineResult {
-    pub path: PathBuf,
-    pub blake3: String,
-    pub perceptual_hash: String,
-}
-
 /// Run Image Pipeline in parallel using Rayon
 pub fn run(
     cfg: types::AppConfig,
     cache: &mut types::CacheFile,
-) -> Result<Vec<ImagePipelineResult>, AppError> {
+) -> Result<Vec<types::PipelineResult>, AppError> {
     // Progress Start
-    let mp = progress::multi();
-    let hashing_pb = mp.add(progress::bar(cfg.media_paths.len() as u64, "Hashing"));
+    let hashing_pb = progress::bar(cfg.media_paths.len() as u64, "Hashing");
 
     // Wrap the caller-owned cache in Arc<Mutex<_>> for thread-safe mutation during parallel work.
     let cache_arc = Arc::new(Mutex::new(std::mem::take(cache)));
 
     // Drive the parallel work with an optional fixed-size pool using your helper.
-    let results: Vec<Result<ImagePipelineResult, (PathBuf, AppError)>> = {
+    let results: Vec<Result<types::PipelineResult, (PathBuf, AppError)>> = {
         if cfg.parallelism > 0 {
             // Configure Rayon
             let pool = rayon::ThreadPoolBuilder::new()
@@ -52,7 +43,8 @@ pub fn run(
     };
 
     // Collect
-    let collected: Vec<ImagePipelineResult> = results.into_iter().filter_map(|r| r.ok()).collect();
+    let collected: Vec<types::PipelineResult> =
+        results.into_iter().filter_map(|r| r.ok()).collect();
 
     // Clear Progress
     hashing_pb.finish_and_clear();
@@ -72,7 +64,7 @@ fn process_path(
     p: &Path,
     cfg: &types::AppConfig,
     cache_arc: &Arc<Mutex<types::CacheFile>>,
-) -> Result<ImagePipelineResult, AppError> {
+) -> Result<types::PipelineResult, AppError> {
     // Compute Blake3 Hash - Parallel
     let key = hashing::compute_blake3(p)?;
 
@@ -80,8 +72,8 @@ fn process_path(
     {
         let cm = cache_arc.lock().unwrap();
         if let Some(entry) = cache::lookup(&cm, &key) {
-            // Return ImagePipelineResult
-            return Ok(ImagePipelineResult {
+            // Return PipelineResult
+            return Ok(types::PipelineResult {
                 path: p.to_path_buf(),
                 blake3: key.clone(),
                 perceptual_hash: entry.perceptual_hash.clone(),
@@ -91,7 +83,7 @@ fn process_path(
 
     // Compute Perceptual Hash - Parallel
     let hasher = hashing::build_hasher(cfg.hash_alg, cfg.hash_w, cfg.hash_h);
-    let phash = hashing::perceptual_hash(p, &hasher)?;
+    let phash = hashing::compute_perceptual_hash(p, &hasher)?;
 
     // Upsert - Single Thread (Write Lock)
     {
@@ -109,7 +101,7 @@ fn process_path(
     }
 
     // Return ImagePipelineResult
-    Ok(ImagePipelineResult {
+    Ok(types::PipelineResult {
         path: p.to_path_buf(),
         blake3: key,
         perceptual_hash: phash,

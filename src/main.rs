@@ -11,8 +11,6 @@ mod types;
 use crate::args::Args;
 use crate::scan::scan_files;
 use clap::Parser;
-use std::path::PathBuf;
-/// REMOVE Pathbuf ONCE I HAVE TYPE FOR RETURN
 
 fn main() -> Result<(), errors::AppError> {
     let args = Args::parse();
@@ -43,10 +41,8 @@ fn main() -> Result<(), errors::AppError> {
     let mut cache = cache::load_cache(&cache_path)?;
 
     // Run Image Pipeline (mutates `cache` in place)
-    let image_pipeline_result: Vec<image_pipeline::ImagePipelineResult> =
-        image_pipeline::run(app_cfg, &mut cache)?;
-
-    println!("{:#?}", image_pipeline_result);
+    let pipeline_results: Vec<types::PipelineResult> = image_pipeline::run(app_cfg, &mut cache)?;
+    println!("{:#?}", pipeline_results);
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;
