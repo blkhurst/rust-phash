@@ -1,5 +1,6 @@
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 pub const DEFAULT_EXTENSIONS: &[&str] = &[
     "jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff", "webp", "avif", "heic", "heif",
@@ -48,4 +49,15 @@ pub struct CacheEntry {
     pub hash_w: u32,
     pub hash_h: u32,
     pub perceptual_hash: String,
+}
+
+/// App-wide Config, reducing boiler-plate function arguments
+#[derive(Clone, Debug)]
+pub struct AppConfig {
+    pub media_paths: Vec<PathBuf>,
+    pub hash_alg: HashAlg,
+    pub hash_w: u32,
+    pub hash_h: u32,
+    pub threshold: u32,
+    pub parallelism: usize,
 }
