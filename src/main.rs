@@ -34,7 +34,6 @@ fn main() -> Result<(), errors::AppError> {
         hash_alg: args.hash_alg,
         hash_w: args.hash_w,
         hash_h: args.hash_h,
-        threshold: args.threshold,
         parallelism: args.parallel,
     };
 

@@ -1,8 +1,4 @@
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-
-pub fn multi() -> MultiProgress {
-    MultiProgress::new()
-}
+use indicatif::{ProgressBar, ProgressStyle};
 
 pub fn bar(len: u64, msg: &str) -> ProgressBar {
     let pb = ProgressBar::new(len);

@@ -58,7 +58,6 @@ pub struct AppConfig {
     pub hash_alg: HashAlg,
     pub hash_w: u32,
     pub hash_h: u32,
-    pub threshold: u32,
     pub parallelism: usize,
 }
 

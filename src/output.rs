@@ -10,6 +10,7 @@ struct JsonGroup {
 #[derive(Serialize)]
 struct JsonFile {
     path: String,
+    blake3: String,
     dist_bits: u32,
 }
 
@@ -51,6 +52,7 @@ fn print_json(groups: &[Group], items: &[PipelineResult]) {
                     let pr = &items[m.index];
                     JsonFile {
                         path: pr.path.display().to_string(),
+                        blake3: pr.blake3.clone(),
                         dist_bits: m.dist_bits,
                     }
                 })
