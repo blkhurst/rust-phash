@@ -13,7 +13,15 @@ pub struct GroupMember {
 }
 
 /// Group items whose perceptual-hash Hamming distance <= `threshold` (bits).
-/// Greedy O(n²). Returns only groups with >1 member.
+///
+/// Greedy Clustering:
+/// - Complexity: Worst case O(n²).
+//  - Keep a boolean `visited` list.
+//  - For each unvisited image i, create a new group seeded with i.
+//  - Compare i to j>i and add j if Hamming distance <= threshold.
+//  - Mark added items visited so they don’t seed new groups.
+//
+// Sorting:
 /// - Members in each group are sorted by ascending distance (most similar first)
 /// - Groups are sorted by size desc, then by avg distance asc
 pub fn group_duplicates(items: &[PipelineResult], threshold: u32) -> Vec<Group> {
