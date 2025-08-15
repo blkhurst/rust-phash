@@ -5,6 +5,7 @@ mod errors;
 mod grouping;
 mod hashing;
 mod image_pipeline;
+mod output;
 mod progress;
 mod scan;
 mod types;
@@ -18,7 +19,7 @@ fn main() -> Result<(), errors::AppError> {
 
     // Scan
     let media_paths = scan_files(&args.directory, types::DEFAULT_EXTENSIONS);
-    println!(
+    eprintln!(
         "Found {} file(s) under \"{}\"",
         media_paths.len(),
         args.directory.display()
@@ -48,18 +49,7 @@ fn main() -> Result<(), errors::AppError> {
     let groups = grouping::group_duplicates(&pipeline_results, args.threshold);
 
     // Print
-    for (idx, g) in groups.iter().enumerate() {
-        println!(
-            "Group {} ({} files) - avg dist: {:.2} bits",
-            idx + 1,
-            g.members.len(),
-            g.avg_dist_bits
-        );
-        for m in &g.members {
-            let pr = &pipeline_results[m.index];
-            println!("  - {} (dist: {} bits)", pr.path.display(), m.dist_bits);
-        }
-    }
+    output::print(&groups, &pipeline_results, args.json);
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;
