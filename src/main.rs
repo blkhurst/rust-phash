@@ -2,6 +2,7 @@
 mod args;
 mod cache;
 mod errors;
+mod grouping;
 mod hashing;
 mod image_pipeline;
 mod progress;
@@ -42,7 +43,23 @@ fn main() -> Result<(), errors::AppError> {
 
     // Run Image Pipeline (mutates `cache` in place)
     let pipeline_results: Vec<types::PipelineResult> = image_pipeline::run(app_cfg, &mut cache)?;
-    println!("{:#?}", pipeline_results);
+
+    // Group Near Duplicates
+    let groups = grouping::group_duplicates(&pipeline_results, args.threshold);
+
+    // Print
+    for (idx, g) in groups.iter().enumerate() {
+        println!(
+            "Group {} ({} files) - avg dist: {:.2} bits",
+            idx + 1,
+            g.members.len(),
+            g.avg_dist_bits
+        );
+        for m in &g.members {
+            let pr = &pipeline_results[m.index];
+            println!("  - {} (dist: {} bits)", pr.path.display(), m.dist_bits);
+        }
+    }
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;
