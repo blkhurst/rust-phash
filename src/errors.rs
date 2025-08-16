@@ -13,6 +13,9 @@ pub enum AppError {
 
     #[error(transparent)]
     Rayon(#[from] rayon::ThreadPoolBuildError),
+
+    #[error(transparent)]
+    Video(#[from] VideoError),
 }
 
 #[derive(Debug, Error)]
@@ -34,4 +37,16 @@ pub enum HashError {
 
     #[error(transparent)]
     Image(#[from] image::ImageError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum VideoError {
+    #[error("ffmpeg init error: {0}")]
+    Ffmpeg(String),
+
+    #[error("video decoding error: {0}")]
+    Decode(String),
+
+    #[error("Failed to decode frames")]
+    NoSamples,
 }
