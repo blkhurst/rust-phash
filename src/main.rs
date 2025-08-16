@@ -18,7 +18,11 @@ fn main() -> Result<(), errors::AppError> {
     let args = Args::parse();
 
     // Scan
-    let media_paths = scan_files(&args.directory, types::DEFAULT_EXTENSIONS);
+    let extensions: &[&str] = match args.media {
+        types::MediaKind::Image => types::IMAGE_EXTENSIONS,
+        types::MediaKind::Video => types::VIDEO_EXTENSIONS,
+    };
+    let media_paths = scan_files(&args.directory, extensions);
     eprintln!(
         "Found {} file(s) under \"{}\"",
         media_paths.len(),
@@ -35,6 +39,11 @@ fn main() -> Result<(), errors::AppError> {
         hash_w: args.hash_w,
         hash_h: args.hash_h,
         parallelism: args.parallel,
+        media_kind: args.media,
+        sample_start: args.sample_start,
+        sample_count: args.sample_count,
+        sample_window: args.sample_window,
+        aggregation: args.aggregation,
     };
 
     // Cache
