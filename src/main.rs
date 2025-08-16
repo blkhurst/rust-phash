@@ -9,6 +9,7 @@ mod output;
 mod progress;
 mod scan;
 mod types;
+mod video;
 
 use crate::args::Args;
 use crate::scan::scan_files;
@@ -51,9 +52,12 @@ fn main() -> Result<(), errors::AppError> {
     let mut cache = cache::load_cache(&cache_path)?;
 
     // Run Image Pipeline (mutates `cache` in place)
-    let pipeline_results: Vec<types::PipelineResult> = image_pipeline::run(app_cfg, &mut cache)?;
+    let pipeline_results: Vec<types::PipelineResult> = match args.media {
+        types::MediaKind::Image => image_pipeline::run(app_cfg, &mut cache)?,
+        types::MediaKind::Video => video::pipeline::run(app_cfg, &mut cache)?,
+    };
 
-    // Group Near Duplicates
+    // Group Near Duplicates (Calculate Hamming Distance)
     let groups = grouping::group_duplicates(&pipeline_results, args.threshold);
 
     // Print
