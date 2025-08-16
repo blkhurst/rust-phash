@@ -19,9 +19,9 @@ fn main() -> Result<(), errors::AppError> {
     let args = Args::parse();
 
     // Scan
-    let extensions: &[&str] = match args.media {
-        types::MediaKind::Image => types::IMAGE_EXTENSIONS,
-        types::MediaKind::Video => types::VIDEO_EXTENSIONS,
+    let extensions: &[&str] = match args.video {
+        true => types::VIDEO_EXTENSIONS,
+        false => types::IMAGE_EXTENSIONS,
     };
     let media_paths = scan_files(&args.directory, extensions);
     eprintln!(
@@ -40,7 +40,6 @@ fn main() -> Result<(), errors::AppError> {
         hash_w: args.hash_w,
         hash_h: args.hash_h,
         parallelism: args.parallel,
-        media_kind: args.media,
         sample_start: args.sample_start,
         sample_count: args.sample_count,
         sample_window: args.sample_window,
@@ -52,9 +51,9 @@ fn main() -> Result<(), errors::AppError> {
     let mut cache = cache::load_cache(&cache_path)?;
 
     // Run Image Pipeline (mutates `cache` in place)
-    let pipeline_results: Vec<types::PipelineResult> = match args.media {
-        types::MediaKind::Image => image_pipeline::run(app_cfg, &mut cache)?,
-        types::MediaKind::Video => video::pipeline::run(app_cfg, &mut cache)?,
+    let pipeline_results: Vec<types::PipelineResult> = match args.video {
+        true => video::pipeline::run(app_cfg, &mut cache)?,
+        false => image_pipeline::run(app_cfg, &mut cache)?,
     };
 
     // Group Near Duplicates (Calculate Hamming Distance)

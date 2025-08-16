@@ -1,4 +1,4 @@
-use crate::types::{self as T, MediaKind};
+use crate::types::{self as T};
 use clap::{ArgAction, Parser, ValueHint};
 use std::path::PathBuf;
 
@@ -42,9 +42,9 @@ pub struct Args {
     #[arg(long = "cache-file", default_value = T::DEFAULT_CACHE_FILE_NAME)]
     pub cache_file: PathBuf,
 
-    /// Select image or video
-    #[arg(long = "media", value_enum, default_value_t = T::MediaKind::Image)]
-    pub media: T::MediaKind,
+    /// Process videos instead of images
+    #[arg(long = "video", action = ArgAction::SetTrue)]
+    pub video: bool,
 
     /// Video ~ Frame to start sampling from.
     #[arg(long = "sample-start", default_value_t = T::DEFAULT_SAMPLE_START)]

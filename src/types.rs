@@ -36,13 +36,6 @@ pub const DEFAULT_PARALLELISM: usize = 0;
 /// Cache filename
 pub const DEFAULT_CACHE_FILE_NAME: &str = ".phash-cache.json";
 
-/// Video ~ Media Type
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
-pub enum MediaKind {
-    Image,
-    Video,
-}
-
 /// Hashing algorithm choices, mirrored from `img_hash`.
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq, Serialize, Deserialize)]
 pub enum HashAlg {
@@ -94,8 +87,7 @@ pub struct AppConfig {
     pub hash_w: u32,
     pub hash_h: u32,
     pub parallelism: usize,
-    //
-    pub media_kind: MediaKind,
+    // Video
     pub sample_start: usize,
     pub sample_count: usize,
     pub sample_window: usize,
