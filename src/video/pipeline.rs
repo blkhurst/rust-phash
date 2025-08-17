@@ -9,7 +9,8 @@ use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 
 use super::{aggregate, decode};
-use crate::{cache, errors::AppError, hashing, progress, types};
+use crate::errors::{AppError, VideoError};
+use crate::{cache, hashing, progress, types};
 
 pub fn run(
     cfg: types::AppConfig,
@@ -33,19 +34,19 @@ pub fn run(
             pool.install(|| {
                 cfg.media_paths
                     .par_iter()
-                    .progress_with(progress_bar.clone())
                     .map(|p| {
                         process_one_video(p.as_path(), &cfg, &cache_arc).map_err(|e| (p.clone(), e))
                     })
+                    .progress_with(progress_bar.clone())
                     .collect()
             })
         } else {
             cfg.media_paths
                 .par_iter()
-                .progress_with(progress_bar.clone())
                 .map(|p| {
                     process_one_video(p.as_path(), &cfg, &cache_arc).map_err(|e| (p.clone(), e))
                 })
+                .progress_with(progress_bar.clone())
                 .collect()
         }
     };
@@ -53,9 +54,23 @@ pub fn run(
     // Clear Progress
     progress_bar.finish_and_clear();
 
-    // Collect successes
-    let collected: Vec<types::PipelineResult> =
-        results.into_iter().filter_map(|r| r.ok()).collect();
+    // Collect Successes and Failures
+    let mut oks: Vec<types::PipelineResult> = Vec::new();
+    let mut errs: Vec<(PathBuf, AppError)> = Vec::new();
+    for r in results {
+        match r {
+            Ok(ok) => oks.push(ok),
+            Err((p, e)) => errs.push((p, e)),
+        }
+    }
+
+    // Error Report
+    if !errs.is_empty() {
+        errs.iter().for_each(|(p, e)| {
+            eprintln!("warn: {} -> {}", p.display(), e);
+        });
+        eprintln!("note: {} file(s) failed", errs.len());
+    }
 
     // Return cache to caller
     let updated = Arc::into_inner(cache_arc)
@@ -64,7 +79,7 @@ pub fn run(
         .unwrap();
     *cache = updated;
 
-    Ok(collected)
+    Ok(oks)
 }
 
 fn process_one_video(
@@ -111,11 +126,7 @@ fn process_one_video(
         types::Aggregation::Medoid => aggregate::aggregate_medoid(&frame_hashes),
         types::Aggregation::Majority => aggregate::aggregate_majority_as_real(&frame_hashes),
     }
-    .unwrap_or_else(|| {
-        // Fallback: if no frames decoded, hash a 1x1 black image so pipeline still returns something.
-        println!("Fallback for {:?}", path);
-        hasher.hash_image(&img_hash::image::DynamicImage::new_rgb8(1, 1))
-    });
+    .ok_or_else(|| AppError::Video(VideoError::NoSamples))?;
     let phash_b64 = video_hash.to_base64();
 
     // Upsert - Single Thread (Write Lock)

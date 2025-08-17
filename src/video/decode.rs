@@ -55,28 +55,18 @@ fn build_rgb_scaler(dec: &codec::decoder::Video) -> Result<scaling::Context, Vid
 }
 
 /// Copy a packed RGB24 frame (with stride) into an owned `DynamicImage`
-fn copy_rgb_to_image_reuse(
-    rgb: &frame::Video,
-    scratch: &mut Vec<u8>,
-) -> Result<DynamicImage, VideoError> {
+fn copy_rgb_to_image(rgb: &frame::Video) -> Result<DynamicImage, AppError> {
     let (w, h) = (rgb.width(), rgb.height());
     let data = rgb.data(0);
     let stride = rgb.stride(0) as usize;
-
-    let row_bytes = (w as usize) * 3;
-    let need = row_bytes * (h as usize);
-    if scratch.len() != need {
-        scratch.resize(need, 0);
-    }
-
+    let mut owned = vec![0u8; (w as usize) * (h as usize) * 3];
     for y in 0..(h as usize) {
-        let src = &data[y * stride..y * stride + row_bytes];
-        let dst = &mut scratch[y * row_bytes..(y + 1) * row_bytes];
+        let src = &data[y * stride..y * stride + (w as usize) * 3];
+        let dst = &mut owned[y * (w as usize) * 3..(y + 1) * (w as usize) * 3];
         dst.copy_from_slice(src);
     }
-
-    let buf = ImageBuffer::<Rgb<u8>, _>::from_raw(w, h, scratch.clone())
-        .ok_or_else(|| VideoError::Decode("image buffer alloc failed".into()))?;
+    let buf: ImageBuffer<Rgb<u8>, _> = ImageBuffer::from_raw(w, h, owned)
+        .ok_or_else(|| AppError::Video(VideoError::Decode("image buffer alloc failed".into())))?;
     Ok(DynamicImage::ImageRgb8(buf))
 }
 
@@ -98,11 +88,11 @@ pub fn decode_sample_even_window_hash(
         .ok_or_else(|| VideoError::Decode("stream index out of range".into()))?;
 
     let total = sample::get_total_frames(&stream).unwrap_or(0);
-    let plan = sample::plan_even_sampling(total, sample_count, sample_start, sample_window);
+    let sample_plan = sample::plan_even_sampling(total, sample_count, sample_start, sample_window);
     // Debug
-    // println!(
+    // eprintln!(
     //     "Start({:?}) Step({:?}) Take({:?}) Total({:?}) File({:?})",
-    //     plan.start, plan.step, plan.take, total, path
+    //     sample_plan.start, sample_plan.step, sample_plan.take, total, path
     // );
 
     let mut scaler = build_rgb_scaler(&dec)?;
@@ -111,14 +101,14 @@ pub fn decode_sample_even_window_hash(
 
     let mut out: Vec<ImageHash> = Vec::with_capacity(sample_count);
     let mut idx = 0usize;
-    let mut remaining = plan.take;
-    let mut scratch = Vec::<u8>::new();
+    let mut remaining = sample_plan.take;
 
     #[inline]
     fn should_take(idx: usize, start: usize, step: usize, remaining: usize) -> bool {
         remaining > 0 && idx >= start && ((idx - start) % step == 0)
     }
 
+    // Read packets & decode frames.
     'packets: for (st, pkt) in ictx.packets() {
         if st.index() != sidx {
             continue;
@@ -128,11 +118,11 @@ pub fn decode_sample_even_window_hash(
         }
 
         while dec.receive_frame(&mut decoded).is_ok() {
-            if should_take(idx, plan.start, plan.step, remaining) {
+            if should_take(idx, sample_plan.start, sample_plan.step, remaining) {
                 scaler
                     .run(&decoded, &mut rgb)
                     .map_err(|e| VideoError::Decode(format!("sws run: {e}")))?;
-                let img = copy_rgb_to_image_reuse(&rgb, &mut scratch)?;
+                let img = copy_rgb_to_image(&rgb)?;
                 out.push(hasher.hash_image(&img));
                 remaining -= 1;
                 if remaining <= 0 {
@@ -152,7 +142,7 @@ pub fn decode_sample_even_window_hash(
             "note: sampled {} of requested {} ({} frames available in window) for {}",
             out.len(),
             sample_count,
-            plan.take,
+            sample_plan.take,
             path.display()
         );
     }
