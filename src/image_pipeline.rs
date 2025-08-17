@@ -83,7 +83,7 @@ fn process_path(
 
     // Compute Perceptual Hash - Parallel
     let hasher = hashing::build_hasher(cfg.hash_alg, cfg.hash_w, cfg.hash_h);
-    let phash = hashing::compute_perceptual_hash(p, &hasher)?;
+    let phash_b64 = hashing::compute_perceptual_hash(p, &hasher)?;
 
     // Upsert - Single Thread (Write Lock)
     {
@@ -95,15 +95,19 @@ fn process_path(
                 hash_alg: cfg.hash_alg,
                 hash_w: cfg.hash_w,
                 hash_h: cfg.hash_h,
-                perceptual_hash: phash.clone(),
+                perceptual_hash: phash_b64.clone(),
+                sample_start: None,
+                sample_count: None,
+                sample_window: None,
+                aggregation: None,
             },
         );
     }
 
-    // Return ImagePipelineResult
+    // Return
     Ok(types::PipelineResult {
         path: p.to_path_buf(),
         blake3: key,
-        perceptual_hash: phash,
+        perceptual_hash: phash_b64,
     })
 }

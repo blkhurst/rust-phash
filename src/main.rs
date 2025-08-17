@@ -9,6 +9,7 @@ mod output;
 mod progress;
 mod scan;
 mod types;
+mod video;
 
 use crate::args::Args;
 use crate::scan::scan_files;
@@ -18,7 +19,11 @@ fn main() -> Result<(), errors::AppError> {
     let args = Args::parse();
 
     // Scan
-    let media_paths = scan_files(&args.directory, types::DEFAULT_EXTENSIONS);
+    let extensions: &[&str] = match args.video {
+        true => types::VIDEO_EXTENSIONS,
+        false => types::IMAGE_EXTENSIONS,
+    };
+    let media_paths = scan_files(&args.directory, extensions);
     eprintln!(
         "Found {} file(s) under \"{}\"",
         media_paths.len(),
@@ -35,6 +40,10 @@ fn main() -> Result<(), errors::AppError> {
         hash_w: args.hash_w,
         hash_h: args.hash_h,
         parallelism: args.parallel,
+        sample_start: args.sample_start,
+        sample_count: args.sample_count,
+        sample_window: args.sample_window,
+        aggregation: args.aggregation,
     };
 
     // Cache
@@ -42,9 +51,12 @@ fn main() -> Result<(), errors::AppError> {
     let mut cache = cache::load_cache(&cache_path)?;
 
     // Run Image Pipeline (mutates `cache` in place)
-    let pipeline_results: Vec<types::PipelineResult> = image_pipeline::run(app_cfg, &mut cache)?;
+    let pipeline_results: Vec<types::PipelineResult> = match args.video {
+        true => video::pipeline::run(app_cfg, &mut cache)?,
+        false => image_pipeline::run(app_cfg, &mut cache)?,
+    };
 
-    // Group Near Duplicates
+    // Group Near Duplicates (Calculate Hamming Distance)
     let groups = grouping::group_duplicates(&pipeline_results, args.threshold);
 
     // Print

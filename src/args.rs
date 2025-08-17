@@ -1,4 +1,4 @@
-use crate::types as T;
+use crate::types::{self as T};
 use clap::{ArgAction, Parser, ValueHint};
 use std::path::PathBuf;
 
@@ -41,4 +41,24 @@ pub struct Args {
     /// Cache file path.
     #[arg(long = "cache-file", default_value = T::DEFAULT_CACHE_FILE_NAME)]
     pub cache_file: PathBuf,
+
+    /// Process videos instead of images
+    #[arg(long = "video", action = ArgAction::SetTrue)]
+    pub video: bool,
+
+    /// Video ~ Frame to start sampling from.
+    #[arg(long = "sample-start", default_value_t = T::DEFAULT_SAMPLE_START)]
+    pub sample_start: usize,
+
+    /// Video ~ Number of frames samples; evenly-spaced between sample-start and sample-window
+    #[arg(long = "sample-count", default_value_t = T::DEFAULT_SAMPLE_COUNT)]
+    pub sample_count: usize,
+
+    /// Video ~ Number of frames to sample over; 0 = auto (whole video).
+    #[arg(long = "sample-window", default_value_t = T::DEFAULT_SAMPLE_WINDOW)]
+    pub sample_window: usize,
+
+    /// Video ~ Aggregation method
+    #[arg(long = "aggregation", value_enum, default_value_t = T::DEFAULT_AGGREGATION)]
+    pub aggregation: T::Aggregation,
 }

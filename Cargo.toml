@@ -36,3 +36,6 @@ image = { version = "0.23.14", default-features = false, features = [
 
 # Parallelism
 rayon = "1.11.0"
+
+## ffmpeg
+ffmpeg-next = "7.1.0"
