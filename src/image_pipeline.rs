@@ -71,7 +71,7 @@ fn process_path(
     // Cache Hit? Return Early - Single Thread (Read Lock)
     {
         let cm = cache_arc.lock().unwrap();
-        if let Some(entry) = cache::lookup(&cm, &key) {
+        if let Some(entry) = cache::lookup(&cm, &key, cfg, /*is_video=*/ false) {
             // Return PipelineResult
             return Ok(types::PipelineResult {
                 path: p.to_path_buf(),

@@ -93,22 +93,13 @@ fn process_one_video(
     // Cache Hit with matching params? Return Early - Single Thread (Read Lock)
     if let Some(entry) = {
         let cm = cache_arc.lock().unwrap();
-        cache::lookup(&cm, &key)
+        cache::lookup(&cm, &key, cfg, /*is_video=*/ true)
     } {
-        let ok = entry.hash_alg == cfg.hash_alg
-            && entry.hash_w == cfg.hash_w
-            && entry.hash_h == cfg.hash_h
-            && entry.sample_start == Some(cfg.sample_start)
-            && entry.sample_count == Some(cfg.sample_count)
-            && entry.sample_window == Some(cfg.sample_window)
-            && entry.aggregation == Some(cfg.aggregation);
-        if ok {
-            return Ok(types::PipelineResult {
-                path: path.to_path_buf(),
-                blake3: key,
-                perceptual_hash: entry.perceptual_hash.clone(),
-            });
-        }
+        return Ok(types::PipelineResult {
+            path: path.to_path_buf(),
+            blake3: key,
+            perceptual_hash: entry.perceptual_hash.clone(),
+        });
     }
 
     // Decode, Sample, Hash Samples

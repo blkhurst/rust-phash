@@ -56,13 +56,14 @@ pub enum Aggregation {
 /// Cache
 ///
 /// Cache Version
-pub const CACHE_VERSION: u32 = 2;
+pub const CACHE_VERSION: u32 = 3;
 
 /// Cache schema persisted to JSON.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CacheFile {
     pub version: u32,
-    pub by_blake3: std::collections::HashMap<String, CacheEntry>,
+    // pub by_blake3: std::collections::HashMap<String, Vec<CacheEntry>>,
+    pub by_blake3: std::collections::BTreeMap<String, Vec<CacheEntry>>,
 }
 
 /// A single cache entry with the exact parameters used to compute the hash.
