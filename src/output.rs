@@ -1,5 +1,7 @@
 use crate::{grouping::Group, types::PipelineResult};
 use serde::Serialize;
+use std::fs;
+use std::path::Path;
 
 #[derive(Serialize)]
 struct JsonGroup {
@@ -40,8 +42,8 @@ fn print_pretty(groups: &[Group], items: &[PipelineResult]) {
     }
 }
 
-fn print_json(groups: &[Group], items: &[PipelineResult]) {
-    let payload: Vec<JsonGroup> = groups
+fn build_json(groups: &[Group], items: &[PipelineResult]) -> Vec<JsonGroup> {
+    groups
         .iter()
         .map(|g| JsonGroup {
             avg_distance_bits: g.avg_dist_bits,
@@ -58,7 +60,20 @@ fn print_json(groups: &[Group], items: &[PipelineResult]) {
                 })
                 .collect(),
         })
-        .collect();
+        .collect()
+}
 
+fn print_json(groups: &[Group], items: &[PipelineResult]) {
+    let payload = build_json(groups, items);
     println!("{}", serde_json::to_string_pretty(&payload).unwrap());
+}
+
+pub fn write_json_file<P: AsRef<Path>>(
+    groups: &[Group],
+    items: &[PipelineResult],
+    path: P,
+) -> std::io::Result<()> {
+    let payload = build_json(groups, items);
+    let json = serde_json::to_string_pretty(&payload).unwrap();
+    fs::write(path, json)
 }

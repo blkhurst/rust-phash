@@ -61,4 +61,8 @@ pub struct Args {
     /// Video ~ Aggregation method
     #[arg(long = "aggregation", value_enum, default_value_t = T::DEFAULT_AGGREGATION)]
     pub aggregation: T::Aggregation,
+
+    /// Output JSON to a file
+    #[arg(long = "output", value_hint = ValueHint::FilePath)]
+    pub output: Option<PathBuf>,
 }

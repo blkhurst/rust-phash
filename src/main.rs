@@ -59,8 +59,13 @@ fn main() -> Result<(), errors::AppError> {
     // Group Near Duplicates (Calculate Hamming Distance)
     let groups = grouping::group_duplicates(&pipeline_results, args.threshold);
 
-    // Print
-    output::print(&groups, &pipeline_results, args.json);
+    // Output or Print
+    if let Some(output_path) = &args.output {
+        output::write_json_file(&groups, &pipeline_results, output_path)?;
+        eprintln!("\nResults written to \"{}\"", output_path.display());
+    } else {
+        output::print(&groups, &pipeline_results, args.json);
+    }
 
     // Save Cache
     cache::save_cache(&cache_path, &cache)?;

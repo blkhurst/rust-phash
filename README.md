@@ -59,6 +59,7 @@ Options:
       --sample-count <SAMPLE_COUNT>    Video ~ Number of frames samples; evenly-spaced between sample-start and sample-window [default: 10]
       --sample-window <SAMPLE_WINDOW>  Video ~ Number of frames to sample over; 0 = auto (whole video) [default: 0]
       --aggregation <AGGREGATION>      Video ~ Aggregation method [default: medoid] [possible values: majority, medoid]
+      --output <OUTPUT>                Output JSON to a file
   -h, --help                           Print help
 ```
 
